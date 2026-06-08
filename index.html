@@ -414,10 +414,15 @@ function renderAlert() {
       <div class="alert-body">Starter 플랜으로 업그레이드하면 추천 리뷰 설정, 현직원 설문, 방문자 현황 등 브랜딩 기능을 이용할 수 있어요.</div>
       <span class="alert-action" onclick="goToPricing()">플랜 보기 →</span>
     </div>`;
+  } else if (currentState === 'deadline') {
+    el.innerHTML = `<div class="alert alert-warning">
+      <div style="font-size:18px;flex-shrink:0;">🔒</div>
+      <div class="alert-body"><strong>내일 자동결제 예정 — 플랜 변경이 불가합니다.</strong> 플랜 변경은 다음 결제일 2일 전까지만 가능합니다.</div>
+    </div>`;
   } else if (currentState === 'deadline-change-scheduled') {
     el.innerHTML = `<div class="alert alert-warning">
       <div style="font-size:18px;flex-shrink:0;">🔒</div>
-      <div class="alert-body"><strong>오늘(2026.07.08)이 플랜 변경 마감일입니다.</strong> 새 플랜 선택은 불가하지만, 예약된 변경(All-in-One)은 오늘까지 취소할 수 있어요.</div>
+      <div class="alert-body"><strong>내일 자동결제 예정 — 플랜 변경이 불가합니다.</strong> (2026.07.09부터 All-in-One 적용 예정)</div>
     </div>`;
   } else {
     el.innerHTML = '';
@@ -490,12 +495,12 @@ function renderMembershipCard() {
       <div class="meta-item"><label>멤버십 기간</label><div class="value">2026.06.09 ~ 2026.07.08</div></div>
       <div class="meta-item"><label>다음 결제일</label><div class="value"><strong style="color:#e74c3c;">내일 (2026.07.09)</strong></div></div>
       <div class="meta-item"><label>다음 달 결제 금액</label><div class="value">₩99,000 → <strong style="color:#00a352">₩500,000</strong></div></div>`;
-    // D-1이지만 예약 취소는 허용 (A안)
-    actionsHtml = `<span class="link-btn" onclick="togglePlanPanel()">변경 취소 ›</span><span style="font-size:11px;color:#e74c3c;font-weight:600;margin-left:6px;">⚠ 오늘 변경 마감</span><span class="link-danger" style="margin-left:12px;" onclick="openCancelModal()">정기결제 해지</span>`;
+    // D-1 완전 프리징: 예약 취소 버튼도 비활성화 (AC Scenario 4)
+    actionsHtml = `<span style="font-size:13px;color:#ccc;cursor:not-allowed;display:flex;align-items:center;gap:6px;">변경 예약 취소<span style="font-size:11px;color:#e74c3c;font-weight:600;">변경 불가</span></span><span class="link-danger" style="margin-left:12px;" onclick="openCancelModal()">정기결제 해지</span>`;
   }
 
   const changeNotice = (currentState === 'change-scheduled' || currentState === 'deadline-change-scheduled')
-    ? `<div class="change-scheduled-notice"><span>📅</span> 2026.07.09부터 <strong>All-in-One</strong>으로 변경 예정입니다. ${currentState === 'deadline-change-scheduled' ? '<strong style="color:#b36000">오늘까지만 취소 가능합니다.</strong>' : '변경 전 취소할 수 있어요.'}</div>` : '';
+    ? `<div class="change-scheduled-notice"><span>📅</span> 2026.07.09부터 <strong>All-in-One</strong>으로 변경 예정입니다. ${currentState === 'deadline-change-scheduled' ? '<strong style="color:#b36000">자동결제 예정일까지 변경 불가합니다.</strong>' : '변경 전 취소할 수 있어요.'}</div>` : '';
 
   el.innerHTML = `<div class="membership-card">
     <div class="membership-card-header">
@@ -570,9 +575,9 @@ function renderTabContent() {
 
   // Plan change panel (state-aware, shows when toggled)
   let planPanel = '';
-  const skipPlanPanel = ['free', 'cancelled', 'deadline'];
+  const skipPlanPanel = ['free', 'cancelled', 'deadline', 'deadline-change-scheduled'];
   if (planPanelOpen && !skipPlanPanel.includes(currentState)) {
-    const isCancelOnly = currentState === 'deadline-change-scheduled';
+    const isCancelOnly = currentState === 'change-scheduled';
 
     const planHtml = PLANS.map(p => {
       const isCurrent = p.id === CURRENT_PLAN[currentState];
@@ -593,13 +598,9 @@ function renderTabContent() {
 
     let note, actionButtons;
     if (isCancelOnly) {
-      note = '오늘(2026.07.08)은 플랜 변경 마감일입니다. 새 플랜 선택은 불가하지만, 예약된 변경(All-in-One)은 오늘까지 취소할 수 있습니다.';
+      note = '이미 변경이 예약되어 있습니다. 새 플랜 선택은 불가하며, 예약된 변경(All-in-One)을 취소할 수 있습니다.';
       actionButtons = `<button class="btn btn-outline-gray btn-sm" onclick="togglePlanPanel()">닫기</button>
-                       <button class="btn btn-outline-red btn-sm" onclick="schedulePlanChange()">예약 취소</button>`;
-    } else if (currentState === 'change-scheduled') {
-      note = '변경 예약을 취소하거나 다른 플랜으로 변경할 수 있습니다. 플랜 변경은 다음 자동결제 실행 <strong>2일 전(2026.07.07)까지</strong>만 가능합니다.';
-      actionButtons = `<button class="btn btn-outline-gray btn-sm" onclick="togglePlanPanel()">닫기</button>
-                       <button class="btn btn-green btn-sm" onclick="schedulePlanChange()">변경 예약</button>`;
+                       <button class="btn btn-outline-red btn-sm" onclick="schedulePlanChange()">변경 예약 취소</button>`;
     } else {
       note = '선택한 플랜은 다음 정기결제일(2026.07.09)부터 적용됩니다. 플랜 변경은 <strong>다음 자동결제 실행 2일 전(2026.07.07)까지</strong>만 가능합니다.';
       actionButtons = `<button class="btn btn-outline-gray btn-sm" onclick="togglePlanPanel()">취소</button>
