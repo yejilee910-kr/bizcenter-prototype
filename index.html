@@ -155,6 +155,23 @@ body { font-family: 'Apple SD Gothic Neo', 'Noto Sans KR', -apple-system, sans-s
 .footer-legal a { cursor: pointer; color: #999; }
 .footer-copy { font-size: 12px; color: #bbb; }
 
+/* ─── PAYMENT METHOD ─────────────── */
+.card-swatch { width: 36px; height: 24px; border-radius: 4px; display: inline-block; vertical-align: middle; margin-right: 10px; flex-shrink: 0; }
+.card-swatch.green { background: linear-gradient(135deg, #00C362, #00a352); }
+.card-swatch.gray { background: linear-gradient(135deg, #888, #aaa); }
+.card-swatch.dark { background: linear-gradient(135deg, #444, #666); }
+.default-badge { display: inline-flex; align-items: center; gap: 4px; font-size: 11px; font-weight: 700; color: #00a352; background: #e8fff3; padding: 3px 10px; border-radius: 10px; }
+.payment-notice { margin-top: 24px; padding: 18px 20px; background: #fafafa; border-radius: 6px; border: 1px solid #efefef; }
+.payment-notice-title { font-size: 13px; font-weight: 700; color: #555; margin-bottom: 10px; }
+.payment-notice ul { font-size: 12px; color: #888; line-height: 1.9; list-style: none; padding: 0; }
+.modal-wide { width: 480px; }
+.card-change-preview { display: flex; align-items: center; justify-content: center; gap: 16px; margin: 20px 0 24px; }
+.card-change-preview .card-box { text-align: center; }
+.card-change-preview .card-box .swatch-lg { width: 56px; height: 36px; border-radius: 6px; display: block; margin: 0 auto 6px; }
+.card-change-preview .card-box .card-label { font-size: 12px; color: #555; }
+.card-change-preview .arrow { font-size: 18px; color: #bbb; }
+.current-badge-above { display: inline-block; font-size: 10px; font-weight: 700; color: #00a352; background: #e8fff3; padding: 2px 7px; border-radius: 8px; margin-bottom: 6px; }
+
 /* ─── DEMO SWITCHER ───────────────── */
 .demo { position: fixed; bottom: 24px; right: 24px; background: #1a1a2e; border-radius: 10px; padding: 12px 14px; box-shadow: 0 4px 20px rgba(0,0,0,0.3); z-index: 300; min-width: 200px; }
 .demo p { font-size: 10px; color: #666; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 8px; }
@@ -247,9 +264,87 @@ body { font-family: 'Apple SD Gothic Neo', 'Noto Sans KR', -apple-system, sans-s
   </div>
 </div>
 
+<!-- 결제 수단 모달 -->
+<div class="modal-backdrop" id="pay-backdrop" onclick="closePayModal(currentPayModal)"></div>
+
+<div class="modal" id="modal-add-card">
+  <div class="modal-title">결제 수단 추가</div>
+  <div class="modal-body" style="background:#f5f5f5;border-radius:6px;text-align:center;padding:32px 16px;color:#aaa;font-size:13px;">
+    이니시스 결제 등록 팝업<br><span style="font-size:11px;">실제 구현 시 이니시스 PG 팝업으로 대체됩니다</span>
+  </div>
+  <div class="modal-footer" style="justify-content:space-between;">
+    <button class="btn btn-outline-gray" onclick="closePayModal('modal-add-card')">취소</button>
+    <button class="btn btn-green" onclick="simulateCardAdded()">카드 등록 완료 (시뮬레이션)</button>
+  </div>
+</div>
+
+<div class="modal modal-wide" id="modal-change-default">
+  <div class="modal-title">기본 결제 수단을 변경할까요?</div>
+  <div class="modal-body" style="margin-bottom:0;">
+    <div class="card-change-preview">
+      <div class="card-box">
+        <span class="current-badge-above">현재 기본</span>
+        <div class="swatch-lg" style="background:linear-gradient(135deg,#00C362,#00a352);border-radius:6px;width:56px;height:36px;margin:0 auto 6px;"></div>
+        <div class="card-label">현대카드 **** 2202</div>
+      </div>
+      <div class="arrow">→</div>
+      <div class="card-box">
+        <span class="current-badge-above" style="background:transparent;color:transparent;">　</span>
+        <div class="swatch-lg" style="background:linear-gradient(135deg,#888,#aaa);border-radius:6px;width:56px;height:36px;margin:0 auto 6px;"></div>
+        <div class="card-label">IBK 기업은행 **** 8709</div>
+      </div>
+    </div>
+    <p style="font-size:13px;color:#888;text-align:center;">새로 추가한 카드를 기본 결제 수단으로 설정할까요?</p>
+  </div>
+  <div class="modal-footer" style="margin-top:24px;">
+    <button class="btn btn-outline-gray" onclick="addWithoutChange()">변경하지 않고 등록</button>
+    <button class="btn btn-green" onclick="confirmDefaultChange()">기본으로 변경하기</button>
+  </div>
+</div>
+
+<div class="modal" id="modal-change-done">
+  <div style="text-align:center;padding:12px 0;">
+    <div style="font-size:32px;margin-bottom:12px;">✅</div>
+    <div class="modal-title" style="justify-content:center;">기본 결제 수단이 변경되었어요</div>
+    <div class="modal-body" style="text-align:center;">IBK 기업은행 **** 8709이 기본 결제 카드로 설정됐어요</div>
+  </div>
+  <div class="modal-footer">
+    <button class="btn btn-green" style="width:100%;" onclick="closePayModal('modal-change-done')">확인</button>
+  </div>
+</div>
+
+<div class="modal" id="modal-max-cards">
+  <div style="text-align:center;padding:12px 0;">
+    <div style="font-size:32px;margin-bottom:12px;">🚫</div>
+    <div class="modal-title">결제 수단을 더 추가할 수 없어요</div>
+    <div class="modal-body" style="text-align:center;">결제 수단은 최대 10개까지 등록할 수 있어요.<br>기존 카드를 삭제한 후 다시 추가해 주세요.</div>
+  </div>
+  <div class="modal-footer">
+    <button class="btn btn-green" style="width:100%;" onclick="closePayModal('modal-max-cards')">확인</button>
+  </div>
+</div>
+
+<div class="modal" id="modal-delete-card">
+  <div class="modal-title">결제 수단을 삭제할까요?</div>
+  <div class="modal-body"><strong id="delete-card-name"></strong>을 삭제하면 복구할 수 없어요.</div>
+  <div class="modal-footer">
+    <button class="btn btn-outline-gray" onclick="closePayModal('modal-delete-card')">취소</button>
+    <button class="btn btn-outline-red" onclick="confirmDeleteCard()">삭제</button>
+  </div>
+</div>
+
+<div class="modal" id="modal-case2">
+  <div class="modal-title">결제 수단을 추가할 수 없어요</div>
+  <div class="modal-body">세금계산서 또는 연납 계약으로 이용 중인 기업은 결제 수단을 직접 추가하거나 변경할 수 없어요.<br><br>결제 수단 변경이 필요하신 경우 고객센터로 문의해 주세요.</div>
+  <div class="modal-footer">
+    <button class="btn btn-outline-gray" onclick="closePayModal('modal-case2')">닫기</button>
+    <button class="btn btn-green" onclick="goToConsult()">고객센터 문의</button>
+  </div>
+</div>
+
 <!-- 데모 전환 -->
 <div class="demo">
-  <p>시나리오 전환 (데모용)</p>
+  <p>멤버십 시나리오</p>
   <button class="demo-btn active" id="demo-normal" onclick="setState('normal', this)">✅ 정상 구독 중</button>
   <button class="demo-btn" id="demo-change-scheduled" onclick="setState('change-scheduled', this)">📅 변경 예약 있음</button>
   <button class="demo-btn" id="demo-cancelled" onclick="setState('cancelled', this)">🚫 해지 예정</button>
@@ -257,6 +352,11 @@ body { font-family: 'Apple SD Gothic Neo', 'Noto Sans KR', -apple-system, sans-s
   <button class="demo-btn" id="demo-free" onclick="setState('free', this)">🆓 Free 기업</button>
   <button class="demo-btn" id="demo-deadline" onclick="setState('deadline', this)">🔒 변경 마감일 (D-1)</button>
   <button class="demo-btn" id="demo-deadline-change-scheduled" onclick="setState('deadline-change-scheduled', this)">🔒📅 마감일 + 예약 있음</button>
+  <p style="margin-top:10px;">결제 수단 케이스</p>
+  <button class="demo-btn demo-pay-btn active" id="pay-single" onclick="setPaymentMode('single', this)">💳 카드 1개</button>
+  <button class="demo-btn demo-pay-btn" id="pay-multi" onclick="setPaymentMode('multi', this)">💳 카드 여러 개</button>
+  <button class="demo-btn demo-pay-btn" id="pay-max" onclick="setPaymentMode('max', this)">🚫 10개 초과 시도</button>
+  <button class="demo-btn demo-pay-btn" id="pay-case2" onclick="setPaymentMode('case2', this)">📄 세금계산서/연납</button>
 </div>
 
 <script>
@@ -409,6 +509,32 @@ function renderMembershipCard() {
 }
 
 let planPanelOpen = false;
+let paymentMode = 'single';
+let currentPayModal = null;
+const PAYMENT_CARDS = {
+  single: [
+    { id: 1, name: '현대카드', num: '2202', color: 'green', isDefault: true }
+  ],
+  multi: [
+    { id: 1, name: '현대카드', num: '2202', color: 'green', isDefault: true },
+    { id: 2, name: 'IBK 기업은행', num: '8709', color: 'gray', isDefault: false }
+  ],
+  max: [
+    { id: 1,  name: '현대카드',    num: '2202', color: 'green', isDefault: true  },
+    { id: 2,  name: 'IBK 기업은행', num: '8709', color: 'gray',  isDefault: false },
+    { id: 3,  name: '신한카드',    num: '4521', color: 'dark',  isDefault: false },
+    { id: 4,  name: 'KB국민카드',  num: '3390', color: 'gray',  isDefault: false },
+    { id: 5,  name: '우리카드',    num: '6612', color: 'dark',  isDefault: false },
+    { id: 6,  name: '하나카드',    num: '7741', color: 'green', isDefault: false },
+    { id: 7,  name: '롯데카드',    num: '2258', color: 'gray',  isDefault: false },
+    { id: 8,  name: 'NH농협카드',  num: '9103', color: 'dark',  isDefault: false },
+    { id: 9,  name: '씨티카드',    num: '5548', color: 'gray',  isDefault: false },
+    { id: 10, name: '삼성카드',    num: '1187', color: 'dark',  isDefault: false }
+  ],
+  case2: [
+    { id: 1, name: '현대카드', num: '2202', color: 'green', isDefault: true }
+  ]
+};
 function togglePlanPanel() {
   planPanelOpen = !planPanelOpen;
   render();
@@ -423,9 +549,13 @@ function renderSectionTabs() {
   const tabsHtml = tabs.map((t, i) =>
     `<div class="section-tab ${activeTab === i ? 'active' : ''}" onclick="setTab(${i})">${t}</div>`
   ).join('');
+  const isPaid = currentState !== 'free';
+  const actionBtn = (activeTab === 0 && isPaid)
+    ? `<button class="btn btn-green btn-sm" onclick="clickAddCard()">결제 수단 추가</button>`
+    : `<button class="btn btn-outline-green btn-sm" onclick="goToConsult()">기업 멤버십 문의</button>`;
   el.innerHTML = `<div class="section-tabs-row">
     <div class="section-tabs">${tabsHtml}</div>
-    <div class="section-tab-action"><button class="btn btn-outline-green btn-sm" onclick="goToConsult()">기업 멤버십 문의</button></div>
+    <div class="section-tab-action">${actionBtn}</div>
   </div>`;
 }
 
@@ -517,41 +647,46 @@ function renderPaymentMethod() {
   if (currentState === 'free') {
     return `<div class="empty-state">
       <div class="empty-icon">💳</div>
-      <p>All-in-One 기업 멤버십을 이용해야 결제 수단을 등록할 수 있어요</p>
+      <p>결제 수단은 멤버십을 구독하는 기업만 추가할 수 있어요</p>
       <br><button class="btn btn-outline-green btn-sm" onclick="goToConsult()">기업 멤버십 문의</button>
     </div>`;
   }
-  const isFailedRow = currentState === 'failed';
+
+  const cards = PAYMENT_CARDS[paymentMode] || PAYMENT_CARDS.single;
+  const isFailedState = currentState === 'failed';
+
+  const rows = cards.map(card => {
+    const failedBadge = isFailedState && card.isDefault
+      ? `<span style="margin-left:8px;font-size:11px;color:#e74c3c;font-weight:600;">결제 실패</span>` : '';
+    const settingHtml = card.isDefault
+      ? `<span class="default-badge">✓ 기본 결제 카드</span>`
+      : `<button class="btn btn-outline-gray btn-sm" onclick="setDefaultCard(${card.id})">기본 카드로 설정</button>
+         <button class="btn btn-outline-red btn-sm" style="margin-left:6px;" onclick="openDeleteCardModal(${card.id}, '${card.name}', '${card.num}')">삭제</button>`;
+    return `<tr>
+      <td>
+        <span class="card-swatch ${card.color}"></span>
+        <span class="card-name">${card.name}</span>
+        <span class="card-num">**** ${card.num}</span>
+        ${failedBadge}
+      </td>
+      <td style="color:#888;">일반결제(Nicepay)</td>
+      <td>${settingHtml}</td>
+    </tr>`;
+  }).join('');
+
   return `<table class="data-table">
     <thead><tr>
       <th>이름</th><th>결제사</th><th>카드 설정</th>
     </tr></thead>
-    <tbody>
-      <tr>
-        <td>
-          <div class="card-thumb shinhan">신한</div>
-          <span class="card-name">신한카드</span>
-          <span class="card-num">**** **** **** 1234</span>
-          ${isFailedRow ? `<span style="margin-left:8px;font-size:11px;color:#e74c3c;font-weight:600;">결제 실패</span>` : ''}
-        </td>
-        <td style="color:#888;">아임포트(Iamport)</td>
-        <td>
-          <span class="badge-primary">기본결제수단</span>
-          <button class="btn btn-outline-gray btn-sm" style="margin-left:8px;" onclick="changeCard()">변경</button>
-          <button class="btn btn-outline-red btn-sm" style="margin-left:4px;" onclick="deleteCard()">삭제</button>
-        </td>
-      </tr>
-    </tbody>
+    <tbody>${rows}</tbody>
   </table>
-  <div style="margin-top:24px;padding:20px;background:#fafafa;border-radius:6px;border:1px solid #efefef;">
-    <div style="font-size:13px;font-weight:700;color:#555;margin-bottom:10px;">결제 유의사항</div>
-    <ul style="font-size:12px;color:#888;line-height:1.8;list-style:none;padding:0;">
-      <li>· 계좌 이체로 결제하는 기업은 결제일 정보를 확인할 수 없어요</li>
-      <li>· 계좌 이체로 결제하는 기업은 결제 수단을 추가할 수 없어요</li>
-      <li>· 결제 수단은 멤버십을 구독하는 기업만 추가할 수 있어요</li>
-      <li>· 결제수단은 최대 10개까지 등록할 수 있으며, 서비스 해지 시 기존에 저장된 결제 수단 정보가 사라져요</li>
-      <li>· 결제 실패 후 카드를 변경하셨을 경우, 변경된 카드로는 익일 오전에 재결제가 진행돼요</li>
-      <li>· 해지는 jobplanet.com 혹은 고객센터로 문의해주세요</li>
+  <div class="payment-notice">
+    <div class="payment-notice-title">결제 유의사항</div>
+    <ul>
+      <li>· 법인 신용카드만 등록 가능합니다</li>
+      <li>· 결제 수단은 최대 10개까지 등록할 수 있으며, 서비스 해지 시 저장된 결제 수단 정보가 삭제됩니다</li>
+      <li>· 결제 실패 후 카드를 변경하신 경우, 변경된 카드로 익일 오전에 재결제가 진행됩니다</li>
+      <li>· 해지는 jobplanet.com 혹은 고객센터로 문의해 주세요</li>
     </ul>
   </div>`;
 }
@@ -619,11 +754,83 @@ function confirmCancel() {
 function undoCancel() {
   setState('normal', document.getElementById('demo-normal'));
 }
-function changeCard() { alert('결제 수단 변경 플로우로 이동합니다.'); }
-function deleteCard() { alert('카드 삭제 확인 모달이 표시됩니다.'); }
 function goToPricing() { alert('기업 멤버십 안내 페이지로 이동합니다.'); }
 function goToConsult() { alert('기업 멤버십 문의 폼으로 이동합니다.'); }
 function loadMore() { alert('추가 결제 이력을 불러옵니다.'); }
+
+function openPayModal(id) {
+  currentPayModal = id;
+  document.getElementById('pay-backdrop').style.display = 'block';
+  document.getElementById(id).style.display = 'block';
+}
+function closePayModal(id) {
+  if (!id) return;
+  document.getElementById('pay-backdrop').style.display = 'none';
+  document.getElementById(id).style.display = 'none';
+  currentPayModal = null;
+}
+
+function clickAddCard() {
+  if (paymentMode === 'case2') { openPayModal('modal-case2'); return; }
+  if (paymentMode === 'max') { openPayModal('modal-max-cards'); return; }
+  openPayModal('modal-add-card');
+}
+
+function simulateCardAdded() {
+  closePayModal('modal-add-card');
+  const cards = PAYMENT_CARDS[paymentMode];
+  if (cards.length === 1) {
+    openPayModal('modal-change-default');
+  } else {
+    cards.push({ id: Date.now(), name: 'IBK 기업은행', num: '8709', color: 'gray', isDefault: false });
+    renderTabContent();
+  }
+}
+
+function confirmDefaultChange() {
+  closePayModal('modal-change-default');
+  const cards = PAYMENT_CARDS[paymentMode];
+  cards.forEach(c => { c.isDefault = false; });
+  cards.push({ id: 2, name: 'IBK 기업은행', num: '8709', color: 'gray', isDefault: true });
+  renderTabContent();
+  openPayModal('modal-change-done');
+}
+
+function addWithoutChange() {
+  closePayModal('modal-change-default');
+  const cards = PAYMENT_CARDS[paymentMode];
+  cards.push({ id: 2, name: 'IBK 기업은행', num: '8709', color: 'gray', isDefault: false });
+  renderTabContent();
+}
+
+function setDefaultCard(cardId) {
+  const cards = PAYMENT_CARDS[paymentMode];
+  cards.forEach(c => { c.isDefault = c.id === cardId; });
+  renderTabContent();
+}
+
+let _deleteCardId = null;
+function openDeleteCardModal(id, name, num) {
+  _deleteCardId = id;
+  document.getElementById('delete-card-name').textContent = name + ' **** ' + num;
+  openPayModal('modal-delete-card');
+}
+function confirmDeleteCard() {
+  closePayModal('modal-delete-card');
+  const cards = PAYMENT_CARDS[paymentMode];
+  const idx = cards.findIndex(c => c.id === _deleteCardId);
+  if (idx !== -1) cards.splice(idx, 1);
+  _deleteCardId = null;
+  renderTabContent();
+}
+
+function setPaymentMode(mode, btn) {
+  paymentMode = mode;
+  document.querySelectorAll('.demo-pay-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  renderSectionTabs();
+  renderTabContent();
+}
 
 /* ═══ INIT ════════════════════════════════════════════ */
 render();
