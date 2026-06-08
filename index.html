@@ -1,0 +1,632 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>멤버십 관리 — 잡플래닛 기업</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Apple SD Gothic Neo', 'Noto Sans KR', -apple-system, sans-serif; background: #fff; color: #222; font-size: 14px; line-height: 1.5; }
+
+/* ─── HEADER ─────────────────────── */
+.gnb { background: #fff; border-bottom: 1px solid #e8e8e8; padding: 0 40px; height: 52px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 100; }
+.gnb-logo { font-size: 18px; font-weight: 800; color: #222; display: flex; align-items: center; gap: 4px; }
+.gnb-logo em { color: #00C362; font-style: normal; }
+.gnb-right { display: flex; align-items: center; gap: 8px; }
+.gnb-btn { padding: 5px 12px; border-radius: 4px; border: 1px solid #d0d0d0; background: #fff; font-size: 12px; color: #555; cursor: pointer; }
+.gnb-btn:hover { background: #f5f5f5; }
+.gnb-avatar { width: 28px; height: 28px; border-radius: 50%; background: #ddd; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 11px; color: #777; }
+
+/* ─── LNB (탭 네비게이션) ──────────── */
+.lnb { background: #fff; border-bottom: 1px solid #e8e8e8; padding: 0 40px; display: flex; align-items: flex-end; gap: 0; }
+.lnb-tab { padding: 14px 16px; font-size: 14px; font-weight: 500; color: #888; cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -1px; white-space: nowrap; }
+.lnb-tab:hover { color: #333; }
+.lnb-tab.active { color: #00C362; font-weight: 700; border-bottom-color: #00C362; }
+
+/* ─── PAGE CONTAINER ──────────────── */
+.container { max-width: 1060px; margin: 0 auto; padding: 40px 20px 80px; }
+
+/* ─── PAGE TITLE ──────────────────── */
+.page-title { font-size: 24px; font-weight: 700; color: #1a1a1a; margin-bottom: 4px; }
+.page-desc { font-size: 14px; color: #888; margin-bottom: 28px; }
+
+/* ─── ALERT BANNERS ───────────────── */
+.alert { display: flex; align-items: flex-start; gap: 10px; padding: 14px 16px; border-radius: 6px; margin-bottom: 20px; font-size: 13px; line-height: 1.5; }
+.alert-error { background: #fff0f0; border: 1px solid #ffd6d6; color: #c0392b; }
+.alert-warning { background: #fff8e6; border: 1px solid #ffe082; color: #b36000; }
+.alert-info { background: #f0fff7; border: 1px solid #b2f0d0; color: #007a40; }
+.alert strong { font-weight: 700; }
+.alert-body { flex: 1; }
+.alert-action { white-space: nowrap; font-weight: 700; color: inherit; text-decoration: underline; cursor: pointer; margin-left: 8px; }
+.alert svg { flex-shrink: 0; margin-top: 1px; }
+
+/* ─── MEMBERSHIP STATUS CARD ──────── */
+.membership-card { background: #f8f8f8; border-radius: 8px; padding: 22px 24px; margin-bottom: 8px; position: relative; }
+.membership-card-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+.membership-card-label { font-size: 12px; color: #888; font-weight: 500; }
+.membership-card-actions { display: flex; align-items: center; gap: 12px; }
+.link-btn { font-size: 13px; color: #00C362; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 2px; }
+.link-btn:hover { text-decoration: underline; }
+.link-danger { color: #e74c3c; font-size: 13px; cursor: pointer; font-weight: 400; }
+.link-danger:hover { text-decoration: underline; }
+
+.tier-row { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; }
+.tier-badge { display: inline-flex; align-items: center; gap: 6px; padding: 4px 12px 4px 10px; border-radius: 20px; font-size: 14px; font-weight: 700; }
+.tier-badge-dot { width: 7px; height: 7px; border-radius: 50%; background: currentColor; display: inline-block; }
+.tier-starter { background: #e8f5ff; color: #0070cc; }
+.tier-allinone { background: #f0e8ff; color: #6b21a8; }
+.tier-free { background: #f0f0f0; color: #777; }
+.tier-standard { background: #edfff5; color: #006633; }
+.status-tag { font-size: 12px; font-weight: 600; padding: 2px 8px; border-radius: 12px; }
+.status-active { background: #e8fff3; color: #00a352; }
+.status-failed { background: #fff0f0; color: #c0392b; }
+.status-cancelled { background: #f0f0f0; color: #888; }
+
+.membership-meta { display: flex; gap: 36px; }
+.meta-item label { font-size: 12px; color: #999; display: block; margin-bottom: 3px; }
+.meta-item .value { font-size: 14px; color: #1a1a1a; font-weight: 500; }
+.meta-item .value.red { color: #c0392b; }
+.meta-item .value.dim { color: #aaa; }
+
+.change-scheduled-notice { margin-top: 14px; padding: 10px 14px; background: #f0fff7; border-left: 3px solid #00C362; border-radius: 0 6px 6px 0; font-size: 13px; color: #006633; display: flex; align-items: center; gap: 6px; }
+
+/* ─── SECTION TABS ────────────────── */
+.section-tabs-row { display: flex; align-items: flex-end; justify-content: space-between; border-bottom: 1px solid #e8e8e8; margin-bottom: 24px; margin-top: 32px; }
+.section-tabs { display: flex; }
+.section-tab { padding: 12px 16px; font-size: 14px; font-weight: 500; color: #888; cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -1px; }
+.section-tab:hover { color: #333; }
+.section-tab.active { color: #1a1a1a; font-weight: 700; border-bottom-color: #1a1a1a; }
+.section-tab-action { margin-bottom: 10px; }
+
+/* ─── BUTTON STYLES ───────────────── */
+.btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; padding: 8px 18px; border-radius: 4px; font-size: 13px; font-weight: 600; cursor: pointer; border: none; transition: all 0.15s; }
+.btn-green { background: #00C362; color: #fff; }
+.btn-green:hover { background: #00a352; }
+.btn-green:disabled { background: #ccc; cursor: not-allowed; }
+.btn-outline-green { background: #fff; color: #00C362; border: 1px solid #00C362; }
+.btn-outline-green:hover { background: #f0fff7; }
+.btn-outline-gray { background: #fff; color: #444; border: 1px solid #d0d0d0; }
+.btn-outline-gray:hover { background: #f5f5f5; }
+.btn-outline-red { background: #fff; color: #e74c3c; border: 1px solid #f5a6a6; font-weight: 400; }
+.btn-outline-red:hover { background: #fff0f0; }
+.btn-sm { padding: 5px 12px; font-size: 12px; }
+
+/* ─── PLAN CHANGE PANEL ───────────── */
+.plan-panel { background: #fff; border: 1px solid #e8e8e8; border-radius: 8px; padding: 22px 24px; margin-bottom: 24px; }
+.plan-panel-title { font-size: 15px; font-weight: 700; margin-bottom: 6px; }
+.plan-panel-desc { font-size: 13px; color: #888; margin-bottom: 18px; }
+.plan-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+.plan-option { border: 1.5px solid #e0e0e0; border-radius: 8px; padding: 14px 16px; cursor: pointer; transition: all 0.15s; position: relative; }
+.plan-option:hover { border-color: #00C362; }
+.plan-option.selected { border-color: #00C362; background: #f0fff7; }
+.plan-option.is-current { border-color: #ddd; background: #fafafa; cursor: default; }
+.plan-option .p-name { font-size: 14px; font-weight: 700; color: #1a1a1a; margin-bottom: 2px; }
+.plan-option .p-price { font-size: 17px; font-weight: 800; color: #1a1a1a; }
+.plan-option .p-price span { font-size: 12px; font-weight: 400; color: #999; }
+.plan-option .p-note { font-size: 11px; color: #aaa; margin-top: 3px; }
+.plan-option .current-tag { position: absolute; top: 8px; right: 8px; font-size: 10px; background: #00C362; color: #fff; padding: 2px 6px; border-radius: 10px; font-weight: 700; }
+.plan-option .check-tag { position: absolute; top: 8px; right: 8px; font-size: 14px; color: #00C362; display: none; font-weight: 700; }
+.plan-option.selected .check-tag { display: block; }
+.plan-option.selected .p-name, .plan-option.selected .p-price { color: #00a352; }
+.plan-actions { display: flex; align-items: center; justify-content: space-between; margin-top: 16px; }
+.plan-note-text { font-size: 12px; color: #aaa; line-height: 1.5; }
+
+/* ─── TABLE ───────────────────────── */
+.data-table { width: 100%; border-collapse: collapse; }
+.data-table thead tr { border-bottom: 1px solid #e8e8e8; }
+.data-table th { text-align: left; font-size: 13px; font-weight: 500; color: #888; padding: 0 12px 12px; }
+.data-table td { padding: 14px 12px; font-size: 13px; border-bottom: 1px solid #f3f3f3; vertical-align: middle; }
+.data-table tr:last-child td { border-bottom: none; }
+.card-thumb { width: 44px; height: 28px; border-radius: 4px; background: linear-gradient(135deg, #1a6ccc, #2fa8e0); display: inline-flex; align-items: center; justify-content: center; font-size: 8px; font-weight: 800; color: rgba(255,255,255,0.9); letter-spacing: 0.02em; margin-right: 10px; vertical-align: middle; }
+.card-thumb.shinhan { background: linear-gradient(135deg, #004A9F, #1277CD); }
+.card-thumb.kb { background: linear-gradient(135deg, #F0A500, #E8900A); }
+.card-thumb.hana { background: linear-gradient(135deg, #008C6A, #00B480); }
+.card-name { font-weight: 600; color: #1a1a1a; vertical-align: middle; }
+.card-num { color: #888; font-size: 12px; vertical-align: middle; margin-left: 4px; }
+.badge-primary { background: #e8fff3; color: #00a352; font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 10px; }
+.payment-status-paid { color: #1a1a1a; font-weight: 500; }
+.payment-status-failed { color: #e74c3c; font-weight: 600; }
+.payment-status-cancelled { color: #aaa; }
+.amount { font-weight: 700; color: #1a1a1a; }
+
+.empty-state { text-align: center; padding: 60px 20px; color: #bbb; }
+.empty-state .empty-icon { font-size: 36px; margin-bottom: 12px; }
+.empty-state p { font-size: 14px; color: #aaa; }
+
+.load-more { text-align: center; padding: 14px; font-size: 13px; color: #00C362; cursor: pointer; font-weight: 600; }
+.load-more:hover { text-decoration: underline; }
+
+/* ─── MODAL ───────────────────────── */
+.modal-backdrop { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 200; }
+.modal { display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: #fff; border-radius: 12px; padding: 28px; width: 420px; z-index: 201; box-shadow: 0 8px 32px rgba(0,0,0,0.18); }
+.modal-title { font-size: 17px; font-weight: 700; margin-bottom: 8px; }
+.modal-body { font-size: 14px; color: #666; line-height: 1.6; margin-bottom: 24px; }
+.modal-body strong { color: #1a1a1a; }
+.modal-footer { display: flex; gap: 8px; justify-content: flex-end; }
+
+/* ─── FOOTER ──────────────────────── */
+.footer { border-top: 1px solid #ebebeb; padding: 32px 40px; background: #fff; }
+.footer-nav { display: flex; gap: 48px; margin-bottom: 24px; }
+.footer-col-title { font-size: 13px; font-weight: 700; margin-bottom: 10px; color: #333; }
+.footer-col a { display: block; font-size: 12px; color: #888; margin-bottom: 6px; cursor: pointer; }
+.footer-col a:hover { color: #333; }
+.footer-bottom { display: flex; align-items: center; justify-content: space-between; border-top: 1px solid #f0f0f0; padding-top: 16px; }
+.footer-legal { display: flex; gap: 16px; font-size: 12px; color: #999; }
+.footer-legal a { cursor: pointer; color: #999; }
+.footer-copy { font-size: 12px; color: #bbb; }
+
+/* ─── DEMO SWITCHER ───────────────── */
+.demo { position: fixed; bottom: 24px; right: 24px; background: #1a1a2e; border-radius: 10px; padding: 12px 14px; box-shadow: 0 4px 20px rgba(0,0,0,0.3); z-index: 300; min-width: 200px; }
+.demo p { font-size: 10px; color: #666; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 8px; }
+.demo-btn { display: block; width: 100%; text-align: left; padding: 6px 10px; border-radius: 6px; border: none; background: transparent; color: #99a0b4; font-size: 12px; cursor: pointer; margin-bottom: 2px; }
+.demo-btn:hover, .demo-btn.active { background: rgba(0,195,98,0.15); color: #00C362; }
+</style>
+</head>
+<body>
+
+<!-- GNB -->
+<header class="gnb">
+  <div class="gnb-logo">Jobplanet<em>기업</em></div>
+  <div class="gnb-right">
+    <span style="font-size:18px;cursor:pointer;color:#aaa;">🔔</span>
+    <div class="gnb-avatar">김</div>
+    <button class="gnb-btn">잡플래닛홈</button>
+    <button class="gnb-btn">내 기업 페이지</button>
+  </div>
+</header>
+
+<!-- LNB -->
+<nav class="lnb">
+  <div class="lnb-tab">홈</div>
+  <div class="lnb-tab">기업 관리</div>
+  <div class="lnb-tab">리뷰 관리</div>
+  <div class="lnb-tab">채용 관리</div>
+  <div class="lnb-tab">인재풀</div>
+  <div class="lnb-tab">데이터</div>
+</nav>
+
+<!-- CONTENT -->
+<div class="container">
+  <div class="page-title">멤버십 관리</div>
+  <div class="page-desc" id="page-desc">결제 수단을 변경하거나 결제 내역을 확인할 수 있어요</div>
+
+  <!-- Alert area -->
+  <div id="alert-area"></div>
+
+  <!-- 현재 멤버십 카드 -->
+  <div id="membership-card-area"></div>
+
+  <!-- 섹션 탭 -->
+  <div id="section-tabs-area"></div>
+
+  <!-- 탭 콘텐츠 -->
+  <div id="tab-content"></div>
+
+</div><!-- /container -->
+
+<!-- Footer -->
+<footer class="footer">
+  <div class="footer-nav">
+    <div class="footer-col">
+      <div class="footer-col-title">홈</div>
+    </div>
+    <div class="footer-col">
+      <div class="footer-col-title">기업관리</div>
+      <a>기업 정보</a><a>커버 이미지</a><a>기업 소식</a><a>기업 스토리</a>
+    </div>
+    <div class="footer-col">
+      <div class="footer-col-title">콘텐츠 관리</div>
+      <a>리뷰 관리</a><a>면접 관리</a><a>복지 관리</a><a>연봉 관리</a><a>사내 커뮤니티 관리</a>
+    </div>
+    <div class="footer-col">
+      <div class="footer-col-title">채용</div>
+      <a>지원자 관리</a><a>채용공고 목록</a><a>채용공고 등록</a><a>인재풀 검색</a><a>후보자 관리</a>
+    </div>
+    <div class="footer-col">
+      <div class="footer-col-title">데이터</div>
+      <a>기업 리포트</a><a>페이밴드</a><a>이용 현황</a><a>기업 브랜드</a><a>인재 관리</a><a>관심도</a><a>연봉 분석</a><a>ALRI</a>
+    </div>
+  </div>
+  <div class="footer-bottom">
+    <div class="footer-legal"><a>이용약관</a><a>개인정보처리방침</a><a>채용서비스 약관</a><a>광고 및 채용문의</a></div>
+    <div class="footer-copy">©Jobplanet. All rights reserved.</div>
+  </div>
+</footer>
+
+<!-- 해지 모달 -->
+<div class="modal-backdrop" id="cancel-backdrop" onclick="closeModal()"></div>
+<div class="modal" id="cancel-modal">
+  <div class="modal-title">정기결제를 해지하시겠어요?</div>
+  <div class="modal-body">
+    해지하더라도 <strong id="cancel-modal-expire">2026.07.08</strong>까지는 현재 멤버십을 그대로 이용하실 수 있습니다.<br>
+    만료일 이후 자동으로 Free로 전환됩니다.
+  </div>
+  <div class="modal-footer">
+    <button class="btn btn-outline-gray" onclick="closeModal()">취소</button>
+    <button class="btn btn-outline-red" onclick="confirmCancel()">해지 확인</button>
+  </div>
+</div>
+
+<!-- 데모 전환 -->
+<div class="demo">
+  <p>시나리오 전환 (데모용)</p>
+  <button class="demo-btn active" id="demo-normal" onclick="setState('normal', this)">✅ 정상 구독 중</button>
+  <button class="demo-btn" id="demo-change-scheduled" onclick="setState('change-scheduled', this)">📅 변경 예약 있음</button>
+  <button class="demo-btn" id="demo-cancelled" onclick="setState('cancelled', this)">🚫 해지 예정</button>
+  <button class="demo-btn" id="demo-failed" onclick="setState('failed', this)">⚠️ 결제 실패</button>
+  <button class="demo-btn" id="demo-free" onclick="setState('free', this)">🆓 Free 기업</button>
+  <button class="demo-btn" id="demo-deadline" onclick="setState('deadline', this)">🔒 변경 마감일 (D-1)</button>
+  <button class="demo-btn" id="demo-deadline-change-scheduled" onclick="setState('deadline-change-scheduled', this)">🔒📅 마감일 + 예약 있음</button>
+</div>
+
+<script>
+/* ═══ STATE ═══════════════════════════════════════════ */
+let currentState = 'normal';
+let activeTab = 0; // 0=결제수단, 1=결제내역, 2=변경이력
+let selectedPlan = 'starter';
+const CURRENT_PLAN = { normal: 'starter', 'change-scheduled': 'starter', cancelled: 'starter', failed: 'starter', free: 'free', 'deadline': 'starter', 'deadline-change-scheduled': 'starter' };
+// D-1 마감 여부 (다음 결제일 전날 = 변경 마감일)
+const IS_DEADLINE = { normal: false, 'change-scheduled': false, cancelled: false, failed: false, free: false, 'deadline': true, 'deadline-change-scheduled': true };
+
+const PLANS = [
+  { id: 'free',     name: 'Free',       price: '₩0',       unit: '',      note: '기본 플랜' },
+  { id: 'starter',  name: 'Starter',    price: '₩99,000',  unit: '/ 월',  note: '' },
+  { id: 'allinone', name: 'All-in-One', price: '₩500,000', unit: '/ 월',  note: '' },
+];
+
+const PAYMENT_HISTORY = [
+  { date: '2026.06.09', plan: 'Starter', amount: '₩99,000', status: 'paid' },
+  { date: '2026.05.09', plan: 'Starter', amount: '₩99,000', status: 'paid' },
+  { date: '2026.04.09', plan: 'Starter', amount: '₩99,000', status: 'paid' },
+  { date: '2026.03.09', plan: 'Starter', amount: '₩99,000', status: 'paid' },
+];
+
+const CHANGE_HISTORY = [
+  { date: '2026.06.09', from: 'Free',    to: 'Starter',    type: '업그레이드' },
+  { date: '2026.03.01', from: '(신규)',   to: 'Free',        type: '계정 생성' },
+];
+
+/* ═══ RENDER ══════════════════════════════════════════ */
+function render() {
+  renderAlert();
+  renderMembershipCard();
+  renderSectionTabs();
+  renderTabContent();
+}
+
+function renderAlert() {
+  const el = document.getElementById('alert-area');
+  if (currentState === 'failed') {
+    el.innerHTML = `<div class="alert alert-error">
+      <div style="font-size:18px;flex-shrink:0;">❗</div>
+      <div class="alert-body"><strong>정기결제에 실패했습니다.</strong> 2026.07.12까지 결제가 완료되지 않으면 Free로 전환됩니다. 등록된 카드를 확인해 주세요.</div>
+      <span class="alert-action" onclick="setTab(0)">결제 수단 변경 →</span>
+    </div>`;
+  } else if (currentState === 'cancelled') {
+    el.innerHTML = `<div class="alert alert-warning">
+      <div style="font-size:18px;flex-shrink:0;">🔔</div>
+      <div class="alert-body"><strong>정기결제가 해지되었습니다.</strong> 2026.07.08 이후 Free로 전환됩니다.</div>
+      <span class="alert-action" onclick="undoCancel()">해지 취소</span>
+    </div>`;
+  } else if (currentState === 'free') {
+    el.innerHTML = `<div class="alert alert-info">
+      <div style="font-size:18px;flex-shrink:0;">💡</div>
+      <div class="alert-body">Starter 플랜으로 업그레이드하면 추천 리뷰 설정, 현직원 설문, 방문자 현황 등 브랜딩 기능을 이용할 수 있어요.</div>
+      <span class="alert-action" onclick="goToPricing()">플랜 보기 →</span>
+    </div>`;
+  } else if (currentState === 'deadline-change-scheduled') {
+    el.innerHTML = `<div class="alert alert-warning">
+      <div style="font-size:18px;flex-shrink:0;">🔒</div>
+      <div class="alert-body"><strong>오늘(2026.07.08)이 플랜 변경 마감일입니다.</strong> 새 플랜 선택은 불가하지만, 예약된 변경(All-in-One)은 오늘까지 취소할 수 있어요.</div>
+    </div>`;
+  } else {
+    el.innerHTML = '';
+  }
+}
+
+function renderMembershipCard() {
+  const el = document.getElementById('membership-card-area');
+  if (currentState === 'free') {
+    el.innerHTML = `<div class="membership-card">
+      <div style="margin-bottom:8px;font-size:13px;color:#888;font-weight:500;">현재 멤버십</div>
+      <div style="font-size:17px;font-weight:700;color:#1a1a1a;margin-bottom:6px;">구독중인 멤버십이 없습니다</div>
+      <div style="font-size:13px;color:#aaa;margin-bottom:12px;">멤버십을 구매하고 기업 브랜딩을 강화하세요</div>
+      <span class="link-btn" onclick="goToPricing()">멤버십 구매 ›</span>
+    </div>`;
+    return;
+  }
+
+  let tierBadge, statusTag, expiryInfo, metaRows, actionsHtml = '';
+  const isDeadline = IS_DEADLINE[currentState] || false;
+  const changeDeadlineNote = isDeadline
+    ? `<span style="font-size:11px;color:#e74c3c;font-weight:600;margin-left:6px;">⚠ 오늘 변경 마감</span>`
+    : `<span style="font-size:11px;color:#aaa;margin-left:6px;">~ 2026.07.07까지 변경 가능</span>`;
+
+  if (currentState === 'normal') {
+    tierBadge = `<div class="tier-badge tier-starter"><span class="tier-badge-dot"></span>Starter</div>`;
+    statusTag = `<span class="status-tag status-active">정기결제 중</span>`;
+    metaRows = `
+      <div class="meta-item"><label>멤버십 기간</label><div class="value">2026.06.09 ~ 2026.07.08</div></div>
+      <div class="meta-item"><label>다음 결제일</label><div class="value">2026.07.09</div></div>
+      <div class="meta-item"><label>결제 금액</label><div class="value">₩99,000 / 월</div></div>`;
+    actionsHtml = `<span class="link-btn" onclick="togglePlanPanel()">멤버십 변경하기 ›</span>${changeDeadlineNote}<span class="link-danger" style="margin-left:12px;" onclick="openCancelModal()">정기결제 해지</span>`;
+  } else if (currentState === 'change-scheduled') {
+    tierBadge = `<div class="tier-badge tier-starter"><span class="tier-badge-dot"></span>Starter</div>`;
+    statusTag = `<span class="status-tag status-active">정기결제 중</span>`;
+    metaRows = `
+      <div class="meta-item"><label>멤버십 기간</label><div class="value">2026.06.09 ~ 2026.07.08</div></div>
+      <div class="meta-item"><label>다음 결제일</label><div class="value">2026.07.09</div></div>
+      <div class="meta-item"><label>다음 달 결제 금액</label><div class="value">₩99,000 → <strong style="color:#00a352">₩500,000</strong></div></div>`;
+    actionsHtml = `<span class="link-btn" onclick="togglePlanPanel()">변경 취소 ›</span>${changeDeadlineNote}<span class="link-danger" style="margin-left:12px;" onclick="openCancelModal()">정기결제 해지</span>`;
+  } else if (currentState === 'cancelled') {
+    tierBadge = `<div class="tier-badge tier-starter"><span class="tier-badge-dot"></span>Starter</div>`;
+    statusTag = `<span class="status-tag status-cancelled">해지 예정</span>`;
+    metaRows = `
+      <div class="meta-item"><label>멤버십 기간</label><div class="value">2026.06.09 ~ 2026.07.08</div></div>
+      <div class="meta-item"><label>멤버십 만료일</label><div class="value">2026.07.08</div></div>
+      <div class="meta-item"><label>만료 후</label><div class="value dim">Free로 전환</div></div>`;
+    actionsHtml = `<span class="link-btn" onclick="undoCancel()">해지 취소 ›</span>`;
+  } else if (currentState === 'failed') {
+    tierBadge = `<div class="tier-badge tier-starter"><span class="tier-badge-dot"></span>Starter</div>`;
+    statusTag = `<span class="status-tag status-failed">결제 실패</span>`;
+    metaRows = `
+      <div class="meta-item"><label>멤버십 기간</label><div class="value">2026.06.09 ~ 2026.07.08</div></div>
+      <div class="meta-item"><label>결제 재시도</label><div class="value red">1차 실패 — 2회 남음</div></div>
+      <div class="meta-item"><label>미결제 시 만료</label><div class="value red">2026.07.12 Free 전환</div></div>`;
+    actionsHtml = `<span class="link-btn" onclick="setTab(0)">결제 수단 변경 ›</span>`;
+  } else if (currentState === 'deadline') {
+    tierBadge = `<div class="tier-badge tier-starter"><span class="tier-badge-dot"></span>Starter</div>`;
+    statusTag = `<span class="status-tag status-active">정기결제 중</span>`;
+    metaRows = `
+      <div class="meta-item"><label>멤버십 기간</label><div class="value">2026.06.09 ~ 2026.07.08</div></div>
+      <div class="meta-item"><label>다음 결제일</label><div class="value"><strong style="color:#e74c3c;">내일 (2026.07.09)</strong></div></div>
+      <div class="meta-item"><label>결제 금액</label><div class="value">₩99,000 / 월</div></div>`;
+    // D-1 당일, 예약 없음: 변경하기 버튼 비활성화
+    actionsHtml = `<span style="font-size:13px;color:#ccc;cursor:not-allowed;display:flex;align-items:center;gap:6px;" title="다음 결제일 전날까지만 변경 가능합니다">멤버십 변경하기 ›<span style="font-size:11px;color:#e74c3c;font-weight:600;">변경 마감</span></span><span class="link-danger" style="margin-left:12px;" onclick="openCancelModal()">정기결제 해지</span>`;
+  } else if (currentState === 'deadline-change-scheduled') {
+    tierBadge = `<div class="tier-badge tier-starter"><span class="tier-badge-dot"></span>Starter</div>`;
+    statusTag = `<span class="status-tag status-active">정기결제 중</span>`;
+    metaRows = `
+      <div class="meta-item"><label>멤버십 기간</label><div class="value">2026.06.09 ~ 2026.07.08</div></div>
+      <div class="meta-item"><label>다음 결제일</label><div class="value"><strong style="color:#e74c3c;">내일 (2026.07.09)</strong></div></div>
+      <div class="meta-item"><label>다음 달 결제 금액</label><div class="value">₩99,000 → <strong style="color:#00a352">₩500,000</strong></div></div>`;
+    // D-1이지만 예약 취소는 허용 (A안)
+    actionsHtml = `<span class="link-btn" onclick="togglePlanPanel()">변경 취소 ›</span><span style="font-size:11px;color:#e74c3c;font-weight:600;margin-left:6px;">⚠ 오늘 변경 마감</span><span class="link-danger" style="margin-left:12px;" onclick="openCancelModal()">정기결제 해지</span>`;
+  }
+
+  const changeNotice = (currentState === 'change-scheduled' || currentState === 'deadline-change-scheduled')
+    ? `<div class="change-scheduled-notice"><span>📅</span> 2026.07.09부터 <strong>All-in-One</strong>으로 변경 예정입니다. ${currentState === 'deadline-change-scheduled' ? '<strong style="color:#b36000">오늘까지만 취소 가능합니다.</strong>' : '변경 전 취소할 수 있어요.'}</div>` : '';
+
+  el.innerHTML = `<div class="membership-card">
+    <div class="membership-card-header">
+      <span class="membership-card-label">현재 멤버십</span>
+      <div class="membership-card-actions">${actionsHtml}</div>
+    </div>
+    <div class="tier-row">${tierBadge}${statusTag}</div>
+    <div class="membership-meta">${metaRows}</div>
+    ${changeNotice}
+  </div>`;
+}
+
+let planPanelOpen = false;
+function togglePlanPanel() {
+  planPanelOpen = !planPanelOpen;
+  render();
+  if (planPanelOpen) {
+    document.getElementById('plan-panel')?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }
+}
+
+function renderSectionTabs() {
+  const el = document.getElementById('section-tabs-area');
+  const tabs = ['결제 수단', '결제 내역', '변경 이력'];
+  const tabsHtml = tabs.map((t, i) =>
+    `<div class="section-tab ${activeTab === i ? 'active' : ''}" onclick="setTab(${i})">${t}</div>`
+  ).join('');
+  el.innerHTML = `<div class="section-tabs-row">
+    <div class="section-tabs">${tabsHtml}</div>
+    <div class="section-tab-action"><button class="btn btn-outline-green btn-sm" onclick="goToConsult()">기업 멤버십 문의</button></div>
+  </div>`;
+}
+
+function setTab(i) {
+  activeTab = i;
+  renderSectionTabs();
+  renderTabContent();
+}
+
+function renderTabContent() {
+  const el = document.getElementById('tab-content');
+
+  // Plan change panel (state-aware, shows when toggled)
+  let planPanel = '';
+  const skipPlanPanel = ['free', 'cancelled', 'deadline'];
+  if (planPanelOpen && !skipPlanPanel.includes(currentState)) {
+    const isCancelOnly = currentState === 'deadline-change-scheduled';
+
+    const planHtml = PLANS.map(p => {
+      const isCurrent = p.id === CURRENT_PLAN[currentState];
+      const isScheduled = currentState.includes('change-scheduled') && p.id === 'allinone';
+      const isSelected = p.id === selectedPlan;
+      // D-1 + 예약 있음: 플랜 카드 전부 비활성 (취소 전용 모드)
+      let cls = 'plan-option' + (isCurrent ? ' is-current' : '') + (!isCancelOnly && isSelected && !isCurrent ? ' selected' : '') + (isCancelOnly && !isCurrent ? ' is-current' : '');
+      const currentTag = isCurrent ? `<span class="current-tag">현재 플랜</span>` : (isScheduled ? `<span class="current-tag" style="background:#f0a500;">변경 예약</span>` : '');
+      const checkTag = `<span class="check-tag">✓</span>`;
+      const disabledStyle = isCancelOnly && !isCurrent ? 'opacity:0.35;' : '';
+      return `<div class="${cls}" style="${disabledStyle}" onclick="${isCancelOnly ? '' : `choosePlan('${p.id}')`}">
+        ${currentTag}${checkTag}
+        <div class="p-name">${p.name}</div>
+        <div class="p-price">${p.price} <span>${p.unit}</span></div>
+        ${p.note ? `<div class="p-note">${p.note}</div>` : ''}
+      </div>`;
+    }).join('');
+
+    let note, actionButtons;
+    if (isCancelOnly) {
+      note = '오늘(2026.07.08)은 플랜 변경 마감일입니다. 새 플랜 선택은 불가하지만, 예약된 변경(All-in-One)은 오늘까지 취소할 수 있습니다.';
+      actionButtons = `<button class="btn btn-outline-gray btn-sm" onclick="togglePlanPanel()">닫기</button>
+                       <button class="btn btn-outline-red btn-sm" onclick="schedulePlanChange()">예약 취소</button>`;
+    } else if (currentState === 'change-scheduled') {
+      note = '변경 예약을 취소하거나 다른 플랜으로 변경할 수 있습니다. 플랜 변경은 다음 자동결제 실행 <strong>2일 전(2026.07.07)까지</strong>만 가능합니다.';
+      actionButtons = `<button class="btn btn-outline-gray btn-sm" onclick="togglePlanPanel()">닫기</button>
+                       <button class="btn btn-green btn-sm" onclick="schedulePlanChange()">변경 예약</button>`;
+    } else {
+      note = '선택한 플랜은 다음 정기결제일(2026.07.09)부터 적용됩니다. 플랜 변경은 <strong>다음 자동결제 실행 2일 전(2026.07.07)까지</strong>만 가능합니다.';
+      actionButtons = `<button class="btn btn-outline-gray btn-sm" onclick="togglePlanPanel()">취소</button>
+                       <button class="btn btn-green btn-sm" ${selectedPlan === CURRENT_PLAN[currentState] ? 'disabled' : ''} onclick="schedulePlanChange()">변경 예약</button>`;
+    }
+
+    planPanel = `<div class="plan-panel" id="plan-panel">
+      <div class="plan-panel-title">멤버십 변경</div>
+      <div class="plan-panel-desc">${isCancelOnly ? '예약된 변경을 취소할 수 있습니다' : '다음 달 정기결제부터 적용할 플랜을 선택하세요'}</div>
+      <div class="plan-grid">${planHtml}</div>
+      <div class="plan-actions">
+        <p class="plan-note-text">${note}</p>
+        <div style="display:flex;gap:8px;flex-shrink:0;margin-left:16px;">${actionButtons}</div>
+      </div>
+    </div>`;
+  }
+
+  let content = '';
+  if (activeTab === 0) content = renderPaymentMethod();
+  else if (activeTab === 1) content = renderPaymentHistory();
+  else content = renderChangeHistory();
+
+  el.innerHTML = planPanel + content;
+}
+
+function choosePlan(id) {
+  if (id === CURRENT_PLAN[currentState]) return;
+  selectedPlan = id;
+  renderTabContent();
+}
+
+function schedulePlanChange() {
+  if (currentState === 'deadline-change-scheduled') {
+    // A안: D-1이어도 예약 취소는 허용 → deadline 상태(예약 없음)로 전환
+    setState('deadline', document.getElementById('demo-deadline'));
+  } else if (currentState === 'change-scheduled') {
+    setState('normal', document.getElementById('demo-normal'));
+  } else {
+    setState('change-scheduled', document.getElementById('demo-change-scheduled'));
+  }
+  planPanelOpen = false;
+}
+
+function renderPaymentMethod() {
+  if (currentState === 'free') {
+    return `<div class="empty-state">
+      <div class="empty-icon">💳</div>
+      <p>All-in-One 기업 멤버십을 이용해야 결제 수단을 등록할 수 있어요</p>
+      <br><button class="btn btn-outline-green btn-sm" onclick="goToConsult()">기업 멤버십 문의</button>
+    </div>`;
+  }
+  const isFailedRow = currentState === 'failed';
+  return `<table class="data-table">
+    <thead><tr>
+      <th>이름</th><th>결제사</th><th>카드 설정</th>
+    </tr></thead>
+    <tbody>
+      <tr>
+        <td>
+          <div class="card-thumb shinhan">신한</div>
+          <span class="card-name">신한카드</span>
+          <span class="card-num">**** **** **** 1234</span>
+          ${isFailedRow ? `<span style="margin-left:8px;font-size:11px;color:#e74c3c;font-weight:600;">결제 실패</span>` : ''}
+        </td>
+        <td style="color:#888;">아임포트(Iamport)</td>
+        <td>
+          <span class="badge-primary">기본결제수단</span>
+          <button class="btn btn-outline-gray btn-sm" style="margin-left:8px;" onclick="changeCard()">변경</button>
+          <button class="btn btn-outline-red btn-sm" style="margin-left:4px;" onclick="deleteCard()">삭제</button>
+        </td>
+      </tr>
+    </tbody>
+  </table>
+  <div style="margin-top:24px;padding:20px;background:#fafafa;border-radius:6px;border:1px solid #efefef;">
+    <div style="font-size:13px;font-weight:700;color:#555;margin-bottom:10px;">결제 유의사항</div>
+    <ul style="font-size:12px;color:#888;line-height:1.8;list-style:none;padding:0;">
+      <li>· 계좌 이체로 결제하는 기업은 결제일 정보를 확인할 수 없어요</li>
+      <li>· 계좌 이체로 결제하는 기업은 결제 수단을 추가할 수 없어요</li>
+      <li>· 결제 수단은 멤버십을 구독하는 기업만 추가할 수 있어요</li>
+      <li>· 결제수단은 최대 10개까지 등록할 수 있으며, 서비스 해지 시 기존에 저장된 결제 수단 정보가 사라져요</li>
+      <li>· 결제 실패 후 카드를 변경하셨을 경우, 변경된 카드로는 익일 오전에 재결제가 진행돼요</li>
+      <li>· 해지는 jobplanet.com 혹은 고객센터로 문의해주세요</li>
+    </ul>
+  </div>`;
+}
+
+function renderPaymentHistory() {
+  const rows = PAYMENT_HISTORY.map(r => {
+    let statusHtml;
+    if (r.status === 'paid') statusHtml = `<span class="payment-status-paid">결제 완료</span>`;
+    else if (r.status === 'failed') statusHtml = `<span class="payment-status-failed">결제 실패</span>`;
+    else statusHtml = `<span class="payment-status-cancelled">취소</span>`;
+    return `<tr>
+      <td><div class="card-thumb shinhan">신한</div><span class="card-name">신한카드</span> <span class="card-num">1234</span></td>
+      <td style="color:#888;">아임포트(Iamport)</td>
+      <td style="color:#888;">${r.date}</td>
+      <td class="amount">${r.amount}</td>
+      <td>${statusHtml}</td>
+    </tr>`;
+  }).join('');
+  return `<table class="data-table">
+    <thead><tr>
+      <th>수단</th><th>결제사</th><th>일시</th><th>금액</th><th>상태</th>
+    </tr></thead>
+    <tbody>${rows}</tbody>
+  </table>
+  <div class="load-more" onclick="loadMore()">더보기 ↓</div>`;
+}
+
+function renderChangeHistory() {
+  const rows = CHANGE_HISTORY.map(r => `<tr>
+    <td style="color:#888;">${r.date}</td>
+    <td>${r.type}</td>
+    <td>${r.from} → <strong>${r.to}</strong></td>
+    <td style="color:#888;">운영자</td>
+  </tr>`).join('');
+  return `<table class="data-table">
+    <thead><tr>
+      <th>변경일</th><th>구분</th><th>내용</th><th>처리</th>
+    </tr></thead>
+    <tbody>${rows}</tbody>
+  </table>`;
+}
+
+/* ═══ ACTIONS ══════════════════════════════════════════ */
+function setState(state, btn) {
+  currentState = state;
+  selectedPlan = CURRENT_PLAN[state] !== undefined ? CURRENT_PLAN[state] : 'starter';
+  planPanelOpen = false;
+  document.querySelectorAll('.demo-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  render();
+}
+
+function openCancelModal() {
+  document.getElementById('cancel-backdrop').style.display = 'block';
+  document.getElementById('cancel-modal').style.display = 'block';
+}
+function closeModal() {
+  document.getElementById('cancel-backdrop').style.display = 'none';
+  document.getElementById('cancel-modal').style.display = 'none';
+}
+function confirmCancel() {
+  closeModal();
+  setState('cancelled', document.getElementById('demo-cancelled'));
+}
+function undoCancel() {
+  setState('normal', document.getElementById('demo-normal'));
+}
+function changeCard() { alert('결제 수단 변경 플로우로 이동합니다.'); }
+function deleteCard() { alert('카드 삭제 확인 모달이 표시됩니다.'); }
+function goToPricing() { alert('기업 멤버십 안내 페이지로 이동합니다.'); }
+function goToConsult() { alert('기업 멤버십 문의 폼으로 이동합니다.'); }
+function loadMore() { alert('추가 결제 이력을 불러옵니다.'); }
+
+/* ═══ INIT ════════════════════════════════════════════ */
+render();
+</script>
+</body>
+</html>
