@@ -1,0 +1,388 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>결제 내역 — 상태별 레퍼런스</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Apple SD Gothic Neo', 'Noto Sans KR', -apple-system, sans-serif; background: #fff; color: #222; font-size: 14px; line-height: 1.5; }
+
+.gnb { background: #fff; border-bottom: 1px solid #e8e8e8; padding: 0 40px; height: 52px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 100; }
+.gnb-logo { font-size: 18px; font-weight: 800; color: #222; display: flex; align-items: center; gap: 4px; }
+.gnb-logo em { color: #00C362; font-style: normal; }
+.gnb-right { display: flex; align-items: center; gap: 8px; }
+.gnb-btn { padding: 5px 12px; border-radius: 4px; border: 1px solid #d0d0d0; background: #fff; font-size: 12px; color: #555; cursor: pointer; }
+.gnb-avatar { width: 28px; height: 28px; border-radius: 50%; background: #ddd; display: flex; align-items: center; justify-content: center; font-size: 11px; color: #777; }
+
+.lnb { background: #fff; border-bottom: 1px solid #e8e8e8; padding: 0 40px; display: flex; align-items: flex-end; }
+.lnb-tab { padding: 14px 16px; font-size: 14px; font-weight: 500; color: #888; border-bottom: 2px solid transparent; margin-bottom: -1px; }
+.lnb-tab.active { color: #00C362; font-weight: 700; border-bottom-color: #00C362; }
+
+.container { max-width: 1060px; margin: 0 auto; padding: 40px 20px 80px; }
+.page-title { font-size: 24px; font-weight: 700; color: #1a1a1a; margin-bottom: 4px; }
+.page-desc { font-size: 14px; color: #888; margin-bottom: 28px; }
+
+.membership-card { background: #f8f8f8; border-radius: 8px; padding: 22px 24px; margin-bottom: 8px; }
+.membership-card-label { font-size: 12px; color: #888; font-weight: 500; margin-bottom: 16px; }
+.tier-row { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; }
+.tier-badge { display: inline-flex; align-items: center; gap: 6px; padding: 4px 12px 4px 10px; border-radius: 20px; font-size: 14px; font-weight: 700; background: #f0e8ff; color: #6b21a8; }
+.tier-badge-dot { width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
+.status-tag { font-size: 12px; font-weight: 600; padding: 2px 8px; border-radius: 12px; background: #e8fff3; color: #00a352; }
+.membership-meta { display: flex; gap: 36px; }
+.meta-item label { font-size: 12px; color: #999; display: block; margin-bottom: 3px; }
+.meta-item .value { font-size: 14px; color: #1a1a1a; font-weight: 500; }
+
+.section-tabs-row { display: flex; align-items: flex-end; justify-content: space-between; border-bottom: 1px solid #e8e8e8; margin-bottom: 24px; margin-top: 32px; }
+.section-tabs { display: flex; }
+.section-tab { padding: 12px 16px; font-size: 14px; font-weight: 500; color: #888; border-bottom: 2px solid transparent; margin-bottom: -1px; }
+.section-tab.active { color: #1a1a1a; font-weight: 700; border-bottom-color: #1a1a1a; }
+.section-tab-action { margin-bottom: 10px; }
+.btn { display: inline-flex; align-items: center; padding: 8px 18px; border-radius: 4px; font-size: 13px; font-weight: 600; cursor: pointer; border: none; }
+.btn-green { background: #00C362; color: #fff; }
+.btn-sm { padding: 5px 12px; font-size: 12px; }
+
+.data-table { width: 100%; border-collapse: collapse; }
+.data-table thead tr { border-bottom: 1px solid #e8e8e8; }
+.data-table th { text-align: left; font-size: 13px; font-weight: 500; color: #888; padding: 0 12px 12px; }
+.data-table td { padding: 14px 12px; font-size: 13px; border-bottom: 1px solid #f3f3f3; vertical-align: middle; }
+.data-table tr:last-child td { border-bottom: none; }
+
+/* 케이스 구분선 */
+.data-table tr.case-divider td { background: #f8f8f8; padding: 10px 12px; font-size: 12px; font-weight: 700; color: #666; border-bottom: 1px solid #e8e8e8; letter-spacing: 0.02em; }
+
+.amount { font-weight: 700; color: #1a1a1a; }
+.amount-cancelled { font-weight: 700; color: #aaa; text-decoration: line-through; }
+
+.pay-status { display: inline-flex; align-items: center; gap: 5px; font-size: 13px; font-weight: 600; }
+.pay-dot { width: 6px; height: 6px; border-radius: 50%; display: inline-block; }
+.pay-status-success { color: #00a352; }
+.pay-status-success .pay-dot { background: #00a352; }
+.pay-status-failed { color: #c0392b; }
+.pay-status-failed .pay-dot { background: #c0392b; }
+.pay-status-cancelled { color: #888; }
+.pay-status-cancelled .pay-dot { background: #999; }
+.sub-reason { font-size: 11px; font-weight: 400; margin-top: 2px; }
+.sub-reason.red { color: #c0392b; }
+.sub-reason.gray { color: #888; }
+
+.btn-receipt { padding: 4px 10px; border-radius: 4px; border: 1px solid #d0d0d0; background: #fff; font-size: 12px; color: #555; cursor: pointer; }
+.btn-receipt:disabled { color: #ccc; border-color: #eee; cursor: not-allowed; background: #fafafa; }
+
+.code-label { display: inline-block; font-size: 10px; font-weight: 700; padding: 2px 6px; border-radius: 3px; margin-left: 6px; vertical-align: middle; }
+.code-label.code-unpaid { background: #fff0f0; color: #c0392b; }
+.code-label.code-fail { background: #fff0f0; color: #c0392b; }
+.code-label.code-success { background: #e8fff3; color: #00a352; }
+.code-label.code-cancel { background: #f5f5f5; color: #888; }
+.code-label.code-partial { background: #fff8e6; color: #b36000; }
+
+.payment-notice { margin-top: 24px; padding: 18px 20px; background: #fafafa; border-radius: 6px; border: 1px solid #efefef; }
+.payment-notice-title { font-size: 13px; font-weight: 700; color: #555; margin-bottom: 10px; }
+.payment-notice ul { font-size: 12px; color: #888; line-height: 1.9; list-style: none; }
+
+.legend { margin-bottom: 24px; padding: 16px 20px; background: #f8f8f8; border-radius: 8px; border: 1px solid #efefef; }
+.legend-title { font-size: 13px; font-weight: 700; color: #555; margin-bottom: 10px; }
+.legend-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; }
+.legend-item { display: flex; align-items: center; gap: 8px; font-size: 12px; }
+.legend-item .pay-status { font-size: 12px; }
+
+.footer { border-top: 1px solid #ebebeb; padding: 32px 40px; background: #fff; }
+.footer-nav { display: flex; gap: 48px; margin-bottom: 24px; }
+.footer-col-title { font-size: 13px; font-weight: 700; margin-bottom: 10px; color: #333; }
+.footer-col a { display: block; font-size: 12px; color: #888; margin-bottom: 6px; }
+.footer-bottom { display: flex; align-items: center; justify-content: space-between; border-top: 1px solid #f0f0f0; padding-top: 16px; }
+.footer-legal { display: flex; gap: 16px; font-size: 12px; color: #999; }
+.footer-copy { font-size: 12px; color: #bbb; }
+</style>
+</head>
+<body>
+
+<header class="gnb">
+  <div class="gnb-logo">Jobplanet<em>기업</em></div>
+  <div class="gnb-right">
+    <span style="font-size:18px;color:#aaa;">🔔</span>
+    <div class="gnb-avatar">김</div>
+    <button class="gnb-btn">잡플래닛홈</button>
+    <button class="gnb-btn">내 기업 페이지</button>
+  </div>
+</header>
+
+<nav class="lnb">
+  <div class="lnb-tab">홈</div>
+  <div class="lnb-tab">기업 관리</div>
+  <div class="lnb-tab">리뷰 관리</div>
+  <div class="lnb-tab">채용 관리</div>
+  <div class="lnb-tab">인재풀</div>
+  <div class="lnb-tab">데이터</div>
+</nav>
+
+<div class="container">
+  <div class="page-title">멤버십 관리</div>
+  <div class="page-desc">결제 수단을 변경하거나 결제 내역을 확인할 수 있어요</div>
+
+  <div class="membership-card">
+    <div class="membership-card-label">현재 멤버십</div>
+    <div class="tier-row">
+      <div class="tier-badge"><span class="tier-badge-dot"></span>All-in-One</div>
+      <span class="status-tag">정기결제 중</span>
+    </div>
+    <div class="membership-meta">
+      <div class="meta-item"><label>멤버십 기간</label><div class="value">2026.07.01 ~ 2026.07.30</div></div>
+      <div class="meta-item"><label>다음 결제일</label><div class="value">2026.07.31</div></div>
+      <div class="meta-item"><label>결제 금액</label><div class="value">₩550,000 / 월</div></div>
+    </div>
+  </div>
+
+  <div class="section-tabs-row">
+    <div class="section-tabs">
+      <div class="section-tab">결제 수단</div>
+      <div class="section-tab active">결제 내역</div>
+      <div class="section-tab">변경 이력</div>
+    </div>
+    <div class="section-tab-action">
+      <button class="btn btn-green btn-sm">결제 수단 관리</button>
+    </div>
+  </div>
+
+  <!-- 상태 레전드 -->
+  <div class="legend">
+    <div class="legend-title">PRD §3.3.4 결제 상태 정의</div>
+    <div class="legend-grid">
+      <div class="legend-item">
+        <span class="code-label code-unpaid">미결제</span>
+        <span>→</span>
+        <span class="pay-status pay-status-failed"><span class="pay-dot"></span>실패</span>
+      </div>
+      <div class="legend-item">
+        <span class="code-label code-fail">결제실패</span>
+        <span>→</span>
+        <span class="pay-status pay-status-failed"><span class="pay-dot"></span>실패</span>
+      </div>
+      <div class="legend-item">
+        <span class="code-label code-success">결제완료</span>
+        <span>→</span>
+        <span class="pay-status pay-status-success"><span class="pay-dot"></span>성공</span>
+      </div>
+      <div class="legend-item">
+        <span class="code-label code-cancel">결제취소</span>
+        <span>→</span>
+        <span class="pay-status pay-status-cancelled"><span class="pay-dot"></span>취소됨</span>
+      </div>
+      <div class="legend-item">
+        <span class="code-label code-partial">부분취소</span>
+        <span>→</span>
+        <span class="pay-status pay-status-cancelled"><span class="pay-dot"></span>취소됨</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- 전체 케이스 테이블 -->
+  <table class="data-table">
+    <thead>
+      <tr>
+        <th style="width:28%">상품</th>
+        <th style="width:14%">일자</th>
+        <th style="width:16%">결제 금액</th>
+        <th style="width:24%">결제 상태</th>
+        <th style="width:18%">전표 발급</th>
+      </tr>
+    </thead>
+    <tbody>
+
+      <!-- ── 1. 결제완료 (성공) ── -->
+      <tr class="case-divider"><td colspan="5">1. 결제완료 → 성공</td></tr>
+      <tr>
+        <td>All-in-One 월 정기</td>
+        <td>2026.07.01</td>
+        <td><span class="amount">₩550,000</span></td>
+        <td>
+          <span class="pay-status pay-status-success"><span class="pay-dot"></span>성공</span>
+          <span class="code-label code-success">결제완료</span>
+        </td>
+        <td><button class="btn-receipt">전표 출력</button></td>
+      </tr>
+      <tr>
+        <td>Starter 월 정기</td>
+        <td>2026.06.01</td>
+        <td><span class="amount">₩99,000</span></td>
+        <td>
+          <span class="pay-status pay-status-success"><span class="pay-dot"></span>성공</span>
+          <span class="code-label code-success">결제완료</span>
+        </td>
+        <td><button class="btn-receipt">전표 출력</button></td>
+      </tr>
+      <tr>
+        <td>기업멤버십(All-in-One) 1년 이용권</td>
+        <td>2026.01.15</td>
+        <td><span class="amount">₩4,620,000</span></td>
+        <td>
+          <span class="pay-status pay-status-success"><span class="pay-dot"></span>성공</span>
+          <span class="code-label code-success">결제완료</span>
+        </td>
+        <td><button class="btn-receipt">전표 출력</button></td>
+      </tr>
+
+      <!-- ── 2. 결제실패 → 실패 (정기결제 실패) ── -->
+      <tr class="case-divider"><td colspan="5">2. 결제실패 → 실패 (정기결제 재시도 실패)</td></tr>
+      <tr>
+        <td>Starter 월 정기</td>
+        <td>2026.07.01</td>
+        <td><span class="amount">₩99,000</span></td>
+        <td>
+          <span class="pay-status pay-status-failed"><span class="pay-dot"></span>실패</span>
+          <span class="code-label code-fail">결제실패</span>
+          <div class="sub-reason red">카드 잔액 부족 (최초 시도)</div>
+        </td>
+        <td><button class="btn-receipt" disabled>-</button></td>
+      </tr>
+      <tr>
+        <td>Starter 월 정기</td>
+        <td>2026.07.02</td>
+        <td><span class="amount">₩99,000</span></td>
+        <td>
+          <span class="pay-status pay-status-failed"><span class="pay-dot"></span>실패</span>
+          <span class="code-label code-fail">결제실패</span>
+          <div class="sub-reason red">카드 한도 초과 (1차 재시도)</div>
+        </td>
+        <td><button class="btn-receipt" disabled>-</button></td>
+      </tr>
+      <tr>
+        <td>Starter 월 정기</td>
+        <td>2026.07.03</td>
+        <td><span class="amount">₩99,000</span></td>
+        <td>
+          <span class="pay-status pay-status-failed"><span class="pay-dot"></span>실패</span>
+          <span class="code-label code-fail">결제실패</span>
+          <div class="sub-reason red">카드 유효기간 만료 (2차 재시도)</div>
+        </td>
+        <td><button class="btn-receipt" disabled>-</button></td>
+      </tr>
+      <tr>
+        <td>
+          Starter 월 정기
+          <div style="font-size:11px;color:#888;margin-top:2px;">재결제 성공 (3차 시도)</div>
+        </td>
+        <td>2026.07.04</td>
+        <td><span class="amount">₩99,000</span></td>
+        <td>
+          <span class="pay-status pay-status-success"><span class="pay-dot"></span>성공</span>
+          <span class="code-label code-success">결제완료</span>
+        </td>
+        <td><button class="btn-receipt">전표 출력</button></td>
+      </tr>
+
+      <!-- ── 3. 미결제 → 실패 (PG 이탈) ── -->
+      <tr class="case-divider"><td colspan="5">3. 미결제 → 실패 (PG 화면 이탈)</td></tr>
+      <tr>
+        <td>Starter 월 정기</td>
+        <td>2026.05.15</td>
+        <td><span class="amount">₩99,000</span></td>
+        <td>
+          <span class="pay-status pay-status-failed"><span class="pay-dot"></span>실패</span>
+          <span class="code-label code-unpaid">미결제</span>
+          <div class="sub-reason red">사용자 이탈 (PG 미완료)</div>
+        </td>
+        <td><button class="btn-receipt" disabled>-</button></td>
+      </tr>
+
+      <!-- ── 4. 결제취소 → 취소됨 (전액 취소) ── -->
+      <tr class="case-divider"><td colspan="5">4. 결제취소 → 취소됨 (전액)</td></tr>
+      <tr>
+        <td>Starter 월 정기</td>
+        <td>2026.06.01</td>
+        <td><span class="amount-cancelled">₩99,000</span></td>
+        <td>
+          <span class="pay-status pay-status-cancelled"><span class="pay-dot"></span>취소됨</span>
+          <span class="code-label code-cancel">결제취소</span>
+          <div class="sub-reason gray">오결제 · 3일 이내 미사용 전액 환불 (2026.06.02)</div>
+        </td>
+        <td><button class="btn-receipt">전표 출력</button></td>
+      </tr>
+      <tr>
+        <td>연봉 분석 티켓 3장</td>
+        <td>2026.04.15</td>
+        <td><span class="amount-cancelled">₩165,000</span></td>
+        <td>
+          <span class="pay-status pay-status-cancelled"><span class="pay-dot"></span>취소됨</span>
+          <span class="code-label code-cancel">결제취소</span>
+          <div class="sub-reason gray">운영팀 처리 (2026.04.16)</div>
+        </td>
+        <td><button class="btn-receipt">전표 출력</button></td>
+      </tr>
+
+      <!-- ── 5. 부분취소 → 취소됨 (일부 취소) ── -->
+      <tr class="case-divider"><td colspan="5">5. 부분취소 → 취소됨 (일부 금액)</td></tr>
+      <tr>
+        <td>All-in-One 월 정기</td>
+        <td>2026.05.01</td>
+        <td>
+          <span class="amount-cancelled">₩550,000</span>
+          <div style="font-size:12px;color:#888;margin-top:2px;">부분취소 ₩165,000</div>
+        </td>
+        <td>
+          <span class="pay-status pay-status-cancelled"><span class="pay-dot"></span>취소됨</span>
+          <span class="code-label code-partial">부분취소</span>
+          <div class="sub-reason gray">즉시 티어 변경 차액 정산 (2026.05.10)</div>
+        </td>
+        <td><button class="btn-receipt">전표 출력</button></td>
+      </tr>
+      <tr>
+        <td>All-in-One 월 정기</td>
+        <td>2026.02.01</td>
+        <td>
+          <span class="amount-cancelled">₩550,000</span>
+          <div style="font-size:12px;color:#888;margin-top:2px;">부분취소 ₩275,000</div>
+        </td>
+        <td>
+          <span class="pay-status pay-status-cancelled"><span class="pay-dot"></span>취소됨</span>
+          <span class="code-label code-partial">부분취소</span>
+          <div class="sub-reason gray">즉시 티어 변경 차액 정산 (2026.02.15)</div>
+        </td>
+        <td><button class="btn-receipt">전표 출력</button></td>
+      </tr>
+
+    </tbody>
+  </table>
+
+  <div class="payment-notice">
+    <div class="payment-notice-title">유의사항</div>
+    <ul>
+      <li>· 계좌 이체로 결제하는 기업은 결제일 정보를 확인할 수 없어요</li>
+      <li>· 결제 수단은 멤버십을 구독하는 기업만 추가할 수 있어요</li>
+      <li>· 결제수단은 최대 10개까지 등록할 수 있으며, 서비스 해지 시 기존에 저장된 결제 수단 정보가 사라져요</li>
+      <li>· 결제 실패 후 카드를 변경하신 경우, 변경된 카드로 익일 오전에 재결제가 진행돼요</li>
+      <li>· 정기결제 실패 시 3회까지 매일 재시도하며, 3회 실패 시 Free로 전환됩니다</li>
+      <li>· 결제 후 3일 이내 서비스 미이용 시 전액 환불이 가능합니다</li>
+      <li>· 문의: partners@jobplanet.com 또는 고객센터</li>
+    </ul>
+  </div>
+</div>
+
+<footer class="footer">
+  <div class="footer-nav">
+    <div class="footer-col"><div class="footer-col-title">홈</div></div>
+    <div class="footer-col">
+      <div class="footer-col-title">기업관리</div>
+      <a>기업 정보</a><a>커버 이미지</a><a>기업 소식</a><a>기업 스토리</a>
+    </div>
+    <div class="footer-col">
+      <div class="footer-col-title">콘텐츠 관리</div>
+      <a>리뷰 관리</a><a>면접 관리</a><a>복지 관리</a><a>연봉 관리</a>
+    </div>
+    <div class="footer-col">
+      <div class="footer-col-title">채용</div>
+      <a>지원자 관리</a><a>채용공고 목록</a><a>채용공고 등록</a>
+    </div>
+    <div class="footer-col">
+      <div class="footer-col-title">데이터</div>
+      <a>기업 리포트</a><a>페이밴드</a><a>이용 현황</a>
+    </div>
+  </div>
+  <div class="footer-bottom">
+    <div class="footer-legal"><a>이용약관</a><a>개인정보처리방침</a><a>채용서비스 약관</a><a>광고 및 채용문의</a></div>
+    <div class="footer-copy">&copy;Jobplanet. All rights reserved.</div>
+  </div>
+</footer>
+
+</body>
+</html>
