@@ -112,14 +112,6 @@ body { font-family: 'Apple SD Gothic Neo', 'Noto Sans KR', -apple-system, sans-s
 .load-more { text-align: center; padding: 14px; font-size: 13px; color: #00C362; cursor: pointer; font-weight: 600; }
 .load-more:hover { text-decoration: underline; }
 
-/* ─── FILTER CHIPS ──────────────── */
-.filter-bar { display: flex; align-items: center; gap: 8px; margin-bottom: 20px; }
-.chip { padding: 6px 14px; border-radius: 20px; border: 1px solid #ddd; font-size: 13px; cursor: pointer; background: #fff; color: #666; transition: all 0.15s; }
-.chip:hover { border-color: #aaa; }
-.chip.active { background: #1a1a1a; color: #fff; border-color: #1a1a1a; }
-.chip .badge { font-size: 11px; margin-left: 3px; color: #c0392b; font-weight: 700; }
-.chip.active .badge { color: #ff9999; }
-
 /* ─── PAYMENT NOTICE ────────────── */
 .payment-notice { margin-top: 24px; padding: 18px 20px; background: #fafafa; border-radius: 6px; border: 1px solid #efefef; }
 .payment-notice-title { font-size: 13px; font-weight: 700; color: #555; margin-bottom: 10px; }
@@ -214,12 +206,6 @@ body { font-family: 'Apple SD Gothic Neo', 'Noto Sans KR', -apple-system, sans-s
   <button class="demo-btn" onclick="setCase('with-cancel', this)">🚫 취소됨 포함 (전액/부분)</button>
   <button class="demo-btn" onclick="setCase('mixed', this)">📋 복합 (실제 운영)</button>
   <button class="demo-btn" onclick="setCase('free', this)">🆓 Free (결제 이력 없음)</button>
-  <hr class="demo-divider">
-  <p>필터</p>
-  <button class="demo-btn demo-filter-btn" onclick="setFilter('all')">전체</button>
-  <button class="demo-btn demo-filter-btn" onclick="setFilter('success')">성공만</button>
-  <button class="demo-btn demo-filter-btn" onclick="setFilter('failed')">실패만</button>
-  <button class="demo-btn demo-filter-btn" onclick="setFilter('cancelled')">취소됨만</button>
 </div>
 
 <script>
@@ -326,7 +312,6 @@ const CASES = {
 
 /* ═══ STATE ═══════════════════════════════════════ */
 let currentCase = 'happy';
-let currentFilter = 'all';
 
 /* ═══ RENDER ═════════════════════════════════════ */
 function render() {
@@ -410,26 +395,7 @@ function renderTable(c) {
     return;
   }
 
-  // Filter chips
-  const chips = `<div class="filter-bar">
-    <span class="chip ${currentFilter === 'all' ? 'active' : ''}" onclick="setFilter('all')">전체</span>
-    <span class="chip ${currentFilter === 'success' ? 'active' : ''}" onclick="setFilter('success')">성공</span>
-    <span class="chip ${currentFilter === 'failed' ? 'active' : ''}" onclick="setFilter('failed')">실패${c.failCount ? `<span class="badge">${c.failCount}</span>` : ''}</span>
-    <span class="chip ${currentFilter === 'cancelled' ? 'active' : ''}" onclick="setFilter('cancelled')">취소됨${c.cancelCount ? `<span class="badge">${c.cancelCount}</span>` : ''}</span>
-  </div>`;
-
-  // Apply filter
-  let rows = c.rows;
-  if (currentFilter === 'success') rows = rows.filter(r => r.status === 'success');
-  else if (currentFilter === 'failed') rows = rows.filter(r => r.status === 'failed');
-  else if (currentFilter === 'cancelled') rows = rows.filter(r => r.status === 'cancelled');
-
-  if (rows.length === 0) {
-    el.innerHTML = chips + `<div class="empty-state" style="padding:40px 20px;">
-      <p>해당 상태의 결제 내역이 없습니다</p>
-    </div>` + renderNotice();
-    return;
-  }
+  const rows = c.rows;
 
   const rowsHtml = rows.map(r => {
     // Status
@@ -488,7 +454,7 @@ function renderTable(c) {
 
   const loadMore = rows.length >= 5 ? `<div class="load-more">더보기 ↓</div>` : '';
 
-  el.innerHTML = chips + tableHtml + loadMore + renderNotice();
+  el.innerHTML = tableHtml + loadMore + renderNotice();
 }
 
 function renderNotice() {
@@ -509,16 +475,9 @@ function renderNotice() {
 /* ═══ ACTIONS ════════════════════════════════════ */
 function setCase(caseName, btn) {
   currentCase = caseName;
-  currentFilter = 'all';
-  document.querySelectorAll('.demo-btn:not(.demo-filter-btn)').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.demo-btn').forEach(b => b.classList.remove('active'));
   if (btn) btn.classList.add('active');
   render();
-}
-
-function setFilter(filter) {
-  currentFilter = filter;
-  const c = CASES[currentCase];
-  renderTable(c);
 }
 
 /* ═══ INIT ═══════════════════════════════════════ */
